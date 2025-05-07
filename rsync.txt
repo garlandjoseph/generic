@@ -1,0 +1,37 @@
+Better Ways to Benchmark rsync Transfer Speed
+1. Use rsync --dry-run for a Test Sync
+bash
+rsync -avn --stats /source/ user@remote:/destination/
+-n (dry run) shows what would be transferred without actually copying.
+
+--stats gives estimated file count and total size.
+
+2. Time a Small Real rsync First
+bash
+time rsync -av /small_test_dir/ user@remote:/destination/
+Measures actual transfer time on a subset of files.
+
+3. Use pv to Monitor Progress
+bash
+rsync -av /source/ user@remote:/destination/ | pv -lep -s $(du -sb /source/ | awk '{print $1}')
+pv shows real-time speed, ETA, and progress (install with sudo apt install pv).
+
+4. Simulate Network Latency with tc (Advanced)
+bash
+# Add 100ms latency + 10Mbps limit (Linux only)
+sudo tc qdisc add dev eth0 root netem delay 100ms rate 10mbit
+# Run rsync test
+rsync -av /source/ user@remote:/destination/
+# Reset network
+sudo tc qdisc del dev eth0 root
+Why dd Fails for rsync Estimation
+Metric	dd (e.g., dd if=/dev/zero bs=1M count=1000)	Real rsync
+Network	❌ None (disk-only)	✅ Yes
+Compression	❌ No	✅ Yes
+Delta-Xfer	❌ No (always full copies)	✅ Yes
+Overhead	❌ Minimal	✅ Protocol + encryption
+Key Takeaway
+✅ For rsync, test with real rsync commands (dry run or small batches).
+🚫 Avoid dd—it only measures disk speed, not network performance.
+
+Would you like a script to automate rsync timing tests?
