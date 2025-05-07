@@ -1,0 +1,68 @@
+#! /bin/python
+# Garland R. Joseph
+# Useful for comparing 2 directory listings (i.e. same directory on different NJS servers)
+#----
+
+from collections import namedtuple
+
+# Define a structure to hold file information
+FileRecord = namedtuple('FileRecord', ['name', 'size', 'date'])
+
+def load_file_list(filename):
+    """Load a file list from a text file"""
+    files = []
+    with open(filename, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            # Split into components (handles spaces in filenames)
+            parts = line.rsplit(maxsplit=2)
+            if len(parts) == 3:
+                name, size, date = parts
+                files.append(FileRecord(name, size, date))
+            else:
+                print(f"Skipping malformed line: {line}")
+    return files
+
+def compare_lists(hosta_files, hostb_files):
+    """Compare two file lists and show differences"""
+    # Create sets of filenames for quick comparison
+    hosta_names = {f.name for f in hosta_files}
+    hostb_names = {f.name for f in hostb_files}
+    
+    # Find unique files
+    only_in_hosta = hosta_names - hostb_names
+    only_in_hostb = hostb_names - hosta_names
+    
+    # Print results
+    print("\nFiles only in hosta.list.txt:")
+    for filename in sorted(only_in_hosta):
+        print(f"  {filename}")
+    
+    print("\nFiles only in hostb.list.txt:")
+    for filename in sorted(only_in_hostb):
+        print(f"  {filename}")
+    
+    # Print summary
+    print("\n=== Summary ===")
+    print(f"Total files in hosta.list.txt: {len(hosta_files)}")
+    print(f"Total files in hostb.list.txt: {len(hostb_files)}")
+    print(f"Files only in hosta.list.txt: {len(only_in_hosta)}")
+    print(f"Files only in hostb.list.txt: {len(only_in_hostb)}")
+    print(f"Files in both lists: {len(hosta_names & hostb_names)}")
+
+def main():
+    print("Loading hosta.list.txt...")
+    hosta_files = load_file_list("hosta.list.txt")
+    
+    print("Loading hostb.list.txt...")
+    hostb_files = load_file_list("hostb.list.txt")
+    
+    print("\nComparing file lists...")
+    compare_lists(hosta_files, hostb_files)
+    
+    print("\nComparison complete.")
+
+if __name__ == "__main__":
+    main()
